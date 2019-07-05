@@ -2,7 +2,9 @@
 title: 'Course project: Part 1'
 author: "Anastasia Kuprina"
 date: "7/5/2019"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ## Overview
