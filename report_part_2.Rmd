@@ -102,7 +102,7 @@ In data terms:
 
 
 
-#### Bootstrapped confidence intervals
+#### Bootstrapping means by group
 
 We have seen the groups have difference based on the supplement method. However, what about the dose?
 
@@ -143,7 +143,7 @@ data.frame(boot = 1:number_of_resamples) %>% # how many repetitions are needed?
 ```
 
 
-This shows that the means are very different from each other based on the daily dose amount. A conclusion we can draw from this, that based on all data (**irrespective of the method) higher doses of Vitamin C result in faster tooth growth**.
+This shows that the means are quite different from each other based on the daily dose amount (very little overlap in the densities). A conclusion we can draw from this, that based on all data (**irrespective of the method) higher doses of Vitamin C result in faster tooth growth**.
 
 
 
