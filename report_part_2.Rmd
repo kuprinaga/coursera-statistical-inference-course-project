@@ -24,17 +24,115 @@ The dataset provides data about the effect of Vitamin C on tooth growth in Guine
 library(datasets)
 library(tidyverse)
 library(magrittr)
+library(boot)
 
 data("ToothGrowth")
 df <- ToothGrowth %>%
   as_tibble()
 
-names(df) %<>% c('tooth_length', 'supplement_type', 'daily_dose')
+names(df) <- c('tooth_length', 'supplement_type', 'daily_dose')
 # I personally dislike names like 'len' and 'supp' as it's easy to forget what they mean
 
 glimpse(df)
 summary(df)
 
 ```
+
+We can try to detect visually if any differences are present with faceting that ggplot offers
+
+
+```{r plotting}
+ggplot(data = df, 
+       aes(x =daily_dose, 
+           y = tooth_length)) + 
+  geom_boxplot(aes(fill = as_factor(daily_dose))) + 
+  facet_grid(.~supplement_type) + 
+  geom_point() + 
+  theme_light() + 
+  labs(title = 'Tooth Growth by supplement type and daily dose', 
+       x = 'Daily dose', 
+       y = 'Length of teeth', 
+       fill = 'Daily dose')
+
+```
+
+Clearly there are a few differences for the groups. Daily dose of 2mg is resulting in higher tooth growth (especially when not giben with Orange Juice - OJ). Overall, however, Orange juice (OJ) seems to have more positive effects compared to VC method.
+
+#### Hypothesis testing
+
+My null hypothesis: supplement type does not have any effect on tooth growth (i.e. tooth growth is the same between supplement types).
+
+In order to run a t-test, we should ensure that means of the data are normally distributed.
+```{r is_normal}
+mean_func <- function(i, x) {
+  mean(x[i])
+}
+
+is_normal <- function(vector, reps = 1000) {
+  boot_mean <- boot(vector, mean_func, reps)
+  plot(boot_mean)
+}
+
+is_normal(df$tooth_length)
+```
+Visually checking, the data looks very normal after 1000 resamples. Now onto the t-test!
+
+```{r t_test}
+t.test(tooth_length ~ supplement_type, data = df, var.equal = F)
+```
+
+The results of the t-test show no difference between the groups (confidence interval includes 0 for the means). We saw that 2mg dose had higher effect for VC supplement method and thus may be increasing the overall mean. We can try and run the test for data without dose of 2mg in the data. This has drawbacks such as (1) biasing the data, (2) decreasing the sample size and degrees of freedom.
+
+
+```{r t_test}
+t.test(tooth_length ~ supplement_type, data = df %>% filter(daily_dose < 2), var.equal = F)
+```
+
+With selectively chosen data, confidence intervals no longer include 0. Based on this, we can conclude that:
+- means of our data are normally distributed due to the Central Limit Theorem and thus we have used t-test for hypothesis testing
+- we assume variances of the two groups are not equal due to not knowing otherwise
+
+In data terms:
+- if we do not take 2mg dose into account, with alpha of 0.05 we can reject null hypothesis and conclude that the two supplement methods do have effect on tooth growth (or we have seen an unfortunately extreme sample)
+- if we do take 2mg dose into account, with alpha of 0.05 we accept the null hypothesis and conclude there is no difference in supplement methods
+In practical actionable terms, if we have to stick with VC, we should give a dose of 2mg. If we can give lower doses, we could go with OJ instead as its efficiency at lower doses is higher.
+
+
+
+#### Bootstrapped confidence intervals
+
+We have seen the groups have difference based on the supplement method. However, what about the dose?
+
+```{r dose_plot}
+ggplot(data = df, 
+       aes(x =daily_dose, 
+           y = tooth_length)) + 
+  geom_boxplot(aes(fill = as_factor(daily_dose))) + 
+  geom_point() + 
+  theme_light() + 
+  labs(title = 'Tooth Growth by supplement type and daily dose', 
+       x = 'Daily dose', 
+       y = 'Length of teeth', 
+       fill = 'Daily dose')
+```
+
+There is quite a lot of overlap in single observations but the groups look different. Could the difference be a result of chance?
+
+```{r bootstrap}
+data.frame(boot = 1:1000) %>% # how many repetitions are needed?
+    group_by(boot) %>%
+    do(sample_n(df, nrow(df), replace = T)) %>% # resample with replacement
+    mutate(daily_dose = as_factor(daily_dose)) %>% # turn daily dose into factor
+    group_by(boot, daily_dose) %>% # group by iteration number and daily dose
+    summarise(avg = mean(tooth_length), # find avg
+              stdev = sd(tooth_length),
+              n_samples = n()) %>%
+  ggplot() + # plot
+  geom_density(aes(x = avg, fill = daily_dose))
+```
+
+
+This shows that the means are very different from each other based on the daily dose amount. A conclusion we can draw from this, that based on all data (irrespective of the method) higher doses of Vitamin C result in faster tooth growth.
+
 
 
