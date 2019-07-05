@@ -5,20 +5,83 @@ date: "7/5/2019"
 output: html_document
 ---
 
-The following report covers Task 1 in the final course project of course "Statistical Inference" available on Coursera.
+## Overview
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+The following report covers Task 1 in the final course project of course "Statistical Inference" available on Coursera. In this project I will investigate the exponential distribution in R and compare it with the Central Limit Theorem. 
+
+## Simulations
+
+A thousand simulations are performed. The value for lambda is set at 0.2 and the distribution of means of 40 exponential distributions are used.
+
+The simulations illustrate:
+- comparison of the sample mean with the theoretical mean of the distribution, 
+- how variable the sample is and compare it to the theoretical variance of the distribution,
+- that the distribution is approximately normal.
+
+
+### Sample vs Theoretical means
+
+#### Setup
+
+```{r setup_for_simulations, error=FALSE, message=FALSE}
+set.seed(2612)
+library(tidyverse)
+
+# given by the assignment
+lambda <- 0.2
+
+# number of exponential distributions to use in simulations
+n_of_distributions <- 40
+
+#number of simulations
+number_of_simulations <- 1000 
+
+#Running the simulations
+simulations <- replicate(number_of_simulations, 
+                         rexp(n_of_distributions, lambda))
+glimpse(simulations)
 ```
 
-## R Markdown
+#### Mean comparison
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Theoretical mean is computed as 1 over lambda:
+```{r theoretical_mean}
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+theoretical_mean <- 1/lambda
+paste0('Theoretical mean: ', theoretical_mean)
+
+```
+
+For a sample mean, I need to compute a mean for each simulation and then find a mean of the sample means.
+
+```{r sample_mean}
+
+simluated_means <- apply(simulations, 2, mean)
+
+mean_of_sampled_means <- mean(simluated_means)
+paste0('Sample mean: ', mean_of_sampled_means)
+
+```
+
+Visually this can be displayed as:
 
 ```{r cars}
-summary(cars)
+library(ggrepel)
+ggplot() + 
+  geom_histogram(aes(x = simluated_means), bins = 20) + 
+  geom_vline(xintercept = theoretical_mean, color = 'red') + 
+  geom_label_repel(aes(x = theoretical_mean + 1, y = 200, 
+                 label = paste0('Theoretical mean: ', round(theoretical_mean,2))),
+             color = 'red') +
+  geom_vline(xintercept = mean_of_sampled_means, color = 'green') +
+  geom_label_repel(aes(x = mean_of_sampled_means - 1, y = 200, 
+                       label = paste0('Sample mean: ', round( mean_of_sampled_means,2))),
+                   color = 'green') + 
+  theme_classic() +
+  labs(title = 'Histogram of sampled means compared to the theoretical mean',
+       y = 'Number of occurences',
+       x = 'Sampled mean')
+
 ```
 
 ## Including Plots
