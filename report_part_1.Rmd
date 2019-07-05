@@ -16,8 +16,11 @@ The following report covers Task 1 in the final course project of course "Statis
 A thousand simulations are performed. The value for lambda is set at 0.2 and the distribution of means of 40 exponential distributions are used.
 
 The simulations illustrate:
+
 - comparison of the sample mean with the theoretical mean of the distribution, 
+
 - how variable the sample is and compare it to the theoretical variance of the distribution,
+
 - that the distribution is approximately normal.
 
 
@@ -68,7 +71,7 @@ paste0('Sample mean: ', mean_of_sampled_means)
 
 Visually this can be displayed as:
 
-```{r cars}
+```{r cars, echo=FALSE, fig.height=3}
 ggplot() + 
   geom_histogram(aes(x = simluated_means), bins = 20) + 
   geom_vline(xintercept = theoretical_mean, color = 'red') + 
@@ -108,7 +111,7 @@ paste0('Sample data variance: ', mean_of_sampled_variances)
 
 Visually the differences can be displayed for example as following:
 
-```{r vis_variance}
+```{r vis_variance, echo=F}
 ggplot() + 
   geom_histogram(aes(x = simulated_variances), bins = 25) + 
   geom_vline(xintercept = theoretical_variance, color = 'purple') + 
@@ -130,7 +133,7 @@ ggplot() +
 
 1) quantile-quantile (qq) plot
 
-```{r normal_or_not}
+```{r normal_or_not, echo=F, fig.height=3}
 ggplot(data = data.frame(simluated_means),
        aes(sample = simluated_means)) +
   stat_qq() +
@@ -146,7 +149,7 @@ ggplot(data = data.frame(simluated_means),
 
 If we find normal distribution with the same standard deviation and mean as our resampled means and compare the densities, we can "eyeball" the plot to see how close the densities are.
 
-```{r normal_or_not_again}
+```{r normal_or_not_again, echo=F, fig.height=3}
 min_for_range <- min(simluated_means)
 max_for_range <- max(simluated_means)
 variance_of_means <- var(simluated_means)
@@ -166,7 +169,7 @@ ggplot() +
                        label = 'Sampled means density'),
                    color = 'orange') +
   geom_label_repel(aes(x = mean_of_sampled_means, 
-                       y = 0.55,
+                       y = 0.6,
                        label = 'Normal distribution density')) + 
   labs(title = 'Normal distribution and sampled means densities',
        subtitle = 'Normal distribution and sample means distributions have the same parameters',

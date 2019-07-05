@@ -2,17 +2,12 @@
 title: "Statistical Inference Course Project - Part 2"
 author: "Anastasia Kuprina"
 date: "7/5/2019"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ### Overview
-
-The goals of the analysis are:
-- load ToothGrowth data and perform basic exploratory data analyses
-- provide basic summary of the data
-- use confidence intervals and/or hypothesis tests to compare tooth growth by supp and dose
-- state your conclusions and assumptions needed for conclusions
-
 
 The dataset provides data about the effect of Vitamin C on tooth growth in Guinea pigs. The response is the length of odontoblasts (cells responsible for tooth growth) in 60 guinea pigs. Each animal received one of three dose levels of vitamin C by one of the two delivery methods.
 
@@ -43,7 +38,7 @@ summary(df)
 
 We can try to detect visually if any differences are present with faceting that ggplot offers
 
-```{r plotting}
+```{r plotting, echo=F, fig.height=3}
 ggplot(data = df, 
        aes(x =daily_dose, 
            y = tooth_length)) + 
@@ -111,7 +106,7 @@ In data terms:
 
 We have seen the groups have difference based on the supplement method. However, what about the dose?
 
-```{r dose_plot}
+```{r dose_plot, echo=F, fig.height=3}
 ggplot(data = df, 
        aes(x = as_factor(daily_dose), 
            y = tooth_length)) + 
