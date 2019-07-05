@@ -20,11 +20,12 @@ The dataset provides data about the effect of Vitamin C on tooth growth in Guine
 ### Analysis
 
 #### Step 1: load data & explore
-```{r setup}
+```{r setup, error=FALSE, message=FALSE}
 library(datasets)
 library(tidyverse)
 library(magrittr)
 library(boot)
+library(glue)
 
 data("ToothGrowth")
 df <- ToothGrowth %>%
@@ -38,8 +39,9 @@ summary(df)
 
 ```
 
-We can try to detect visually if any differences are present with faceting that ggplot offers
+#### Step 2: dig around and plot
 
+We can try to detect visually if any differences are present with faceting that ggplot offers
 
 ```{r plotting}
 ggplot(data = df, 
@@ -75,7 +77,7 @@ is_normal <- function(vector, reps = 1000) {
 
 is_normal(df$tooth_length)
 ```
-Visually checking, the data looks very normal after 1000 resamples. Now onto the t-test!
+Visually checking, the data looks close to normal after 1000 resamples. Now onto the t-test!
 
 ```{r t_test}
 t.test(tooth_length ~ supplement_type, data = df, var.equal = F)
@@ -84,18 +86,24 @@ t.test(tooth_length ~ supplement_type, data = df, var.equal = F)
 The results of the t-test show no difference between the groups (confidence interval includes 0 for the means). We saw that 2mg dose had higher effect for VC supplement method and thus may be increasing the overall mean. We can try and run the test for data without dose of 2mg in the data. This has drawbacks such as (1) biasing the data, (2) decreasing the sample size and degrees of freedom.
 
 
-```{r t_test}
+```{r t_test_specific_to_dose}
 t.test(tooth_length ~ supplement_type, data = df %>% filter(daily_dose < 2), var.equal = F)
 ```
 
 With selectively chosen data, confidence intervals no longer include 0. Based on this, we can conclude that:
+
 - means of our data are normally distributed due to the Central Limit Theorem and thus we have used t-test for hypothesis testing
+
 - we assume variances of the two groups are not equal due to not knowing otherwise
 
 In data terms:
-- if we do not take 2mg dose into account, with alpha of 0.05 we can reject null hypothesis and conclude that the two supplement methods do have effect on tooth growth (or we have seen an unfortunately extreme sample)
-- if we do take 2mg dose into account, with alpha of 0.05 we accept the null hypothesis and conclude there is no difference in supplement methods
-In practical actionable terms, if we have to stick with VC, we should give a dose of 2mg. If we can give lower doses, we could go with OJ instead as its efficiency at lower doses is higher.
+
+- if we do not take 2mg dose into account, with alpha of 0.05 we can reject null hypothesis and conclude that the **two supplement methods do have effect on tooth growth** (or we have seen an unfortunately extreme sample)
+
+- **if we do take 2mg dose into account, with alpha of 0.05 we accept the null hypothesis and conclude there is no difference in supplement methods**
+<br/>
+
+**In practical actionable terms**, if we have to stick with VC, we should give a dose of 2mg. If we can give lower doses, we could go with OJ instead as its efficiency at lower doses is higher.
 
 
 
@@ -105,7 +113,7 @@ We have seen the groups have difference based on the supplement method. However,
 
 ```{r dose_plot}
 ggplot(data = df, 
-       aes(x =daily_dose, 
+       aes(x = as_factor(daily_dose), 
            y = tooth_length)) + 
   geom_boxplot(aes(fill = as_factor(daily_dose))) + 
   geom_point() + 
@@ -119,7 +127,8 @@ ggplot(data = df,
 There is quite a lot of overlap in single observations but the groups look different. Could the difference be a result of chance?
 
 ```{r bootstrap}
-data.frame(boot = 1:1000) %>% # how many repetitions are needed?
+number_of_resamples = 1000
+data.frame(boot = 1:number_of_resamples) %>% # how many repetitions are needed?
     group_by(boot) %>%
     do(sample_n(df, nrow(df), replace = T)) %>% # resample with replacement
     mutate(daily_dose = as_factor(daily_dose)) %>% # turn daily dose into factor
@@ -128,11 +137,18 @@ data.frame(boot = 1:1000) %>% # how many repetitions are needed?
               stdev = sd(tooth_length),
               n_samples = n()) %>%
   ggplot() + # plot
-  geom_density(aes(x = avg, fill = daily_dose))
+  geom_density(aes(x = avg, fill = daily_dose),
+               alpha = 0.8) +
+  theme_light() +
+  labs(title = 'Densities of resampled means',
+       subtitle = glue('Resampled {number_of_resamples} times'),
+       x = 'Average tooth growth',
+       y = 'Density',
+       fill = 'Daily dose')
 ```
 
 
-This shows that the means are very different from each other based on the daily dose amount. A conclusion we can draw from this, that based on all data (irrespective of the method) higher doses of Vitamin C result in faster tooth growth.
+This shows that the means are very different from each other based on the daily dose amount. A conclusion we can draw from this, that based on all data (**irrespective of the method) higher doses of Vitamin C result in faster tooth growth**.
 
 
 
