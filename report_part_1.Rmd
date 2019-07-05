@@ -26,6 +26,7 @@ The simulations illustrate:
 ```{r setup_for_simulations, error=FALSE, message=FALSE}
 set.seed(2612)
 library(tidyverse)
+library(ggrepel)
 
 # given by the assignment
 lambda <- 0.2
@@ -66,7 +67,6 @@ paste0('Sample mean: ', mean_of_sampled_means)
 Visually this can be displayed as:
 
 ```{r cars}
-library(ggrepel)
 ggplot() + 
   geom_histogram(aes(x = simluated_means), bins = 20) + 
   geom_vline(xintercept = theoretical_mean, color = 'red') + 
@@ -84,12 +84,91 @@ ggplot() +
 
 ```
 
-## Including Plots
+### Sample vs Theoretical variances
 
-You can also embed plots, for example:
+Theoretical variance of the exponential distribution is 1/lambda^2:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+```{r theoretical_variance}
+theoretical_variance <- 1/(lambda^2)
+paste0('Theoretical variance: ', theoretical_variance)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+In the same way I calculated means for the simulated dataset, variance calculation is possible:
+
+```{r sampled_variance}
+
+simulated_variances <- apply(simulations, 2, var)
+
+mean_of_sampled_variances <- mean(simulated_variances)
+paste0('Sample data variance: ', mean_of_sampled_variances)
+
+```
+
+Visually the differences can be displayed for example as following:
+
+```{r vis_variance}
+ggplot() + 
+  geom_histogram(aes(x = simulated_variances), bins = 25) + 
+  geom_vline(xintercept = theoretical_variance, color = 'purple') + 
+  geom_label_repel(aes(x = theoretical_variance + 20, y = 300, 
+                 label = paste0('Theoretical variance: ', round(theoretical_variance,2))),
+             color = 'purple') +
+  geom_vline(xintercept = mean_of_sampled_variances, color = 'blue') +
+  geom_label_repel(aes(x = mean_of_sampled_variances - 20, y = 250, 
+                       label = paste0('Sample variance: ', round( mean_of_sampled_variances,2))),
+                   color = 'blue') + 
+  theme_classic() +
+  labs(title = 'Histogram of sampled variances compared to the theoretical variance',
+       y = 'Number of occurences',
+       x = 'Sampled variance')
+
+```
+
+### Distribution of the means is normally distributed
+
+1) quantile-quantile (qq) plot
+
+```{r normal_or_not}
+ggplot(data = data.frame(simluated_means),
+       aes(sample = simluated_means)) +
+  stat_qq() +
+  stat_qq_line() +
+  theme_classic() +
+  labs(title = 'QQ plot of the simulated means data',
+       x = 'Theoretical quantiles',
+       y = 'Sample quantiles')
+
+```
+
+2) distribution density compared to normal distribution's density if it had the same mean
+
+If we find normal distribution with the same standard deviation and mean as our resampled means and compare the densities, we can "eyeball" the plot to see how close the densities are.
+
+```{r normal_or_not_again}
+min_for_range <- min(simluated_means)
+max_for_range <- max(simluated_means)
+variance_of_means <- var(simluated_means)
+
+
+ggplot() +
+  stat_function(aes(x = simluated_means),
+                fun = dnorm, n = 1000, args = list(mean = mean_of_sampled_means,
+                                                   sd = sqrt(variance_of_means)),
+                colour = 'black',
+                size = 2)  +
+  geom_density(aes(x = simluated_means),
+               fill = 'orange',
+               alpha = 0.5) +
+  geom_label_repel(aes(x = mean_of_sampled_means,
+                       y = 0.2,
+                       label = 'Sampled means density'),
+                   color = 'orange') +
+  geom_label_repel(aes(x = mean_of_sampled_means, 
+                       y = 0.55,
+                       label = 'Normal distribution density')) + 
+  labs(title = 'Normal distribution and sampled means densities',
+       subtitle = 'Normal distribution and sample means distributions have the same parameters',
+       x = 'Sampled means',
+       y = 'Density')
+
+```
